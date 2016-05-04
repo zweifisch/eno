@@ -1,85 +1,79 @@
 defmodule Exql do
 
-  use Combine, parsers: [:text]
-
-  defp tag(parser, tag) do
-    map(parser, fn x -> {tag, x} end)
-  end
-
-  defp as(parser, as) do
-    map(parser, fn _ -> as end)
-  end
-
-  defp to_sql(tokens) do
-    Enum.reduce(tokens, {"", []}, fn (x, {sql, vars}) ->
-      case x do
-        {:var, [name, type]} -> {"#{sql}$#{1+Enum.count vars}", vars ++ [{name, type}]}
-        _ -> {sql <> x, vars}
-      end
-    end)
-  end
-
-  @doc """
-  [[name: "user_create",
-  sql: {"INSERT INTO", [{"name", nil}]}
-  ]]
-  """
-  def parse(input) do
-    fn_name = skip(string("--"))
-      |> skip(many(space))
-      |> skip(string("name:"))
-      |> skip(many(space))
-      |> label(word_of(~r/[a-zA-Z0-9_]+[!?]?/), "fn_name")
-      |> map(&String.to_atom(&1))
-      |> tag(:name)
-    type = [skip(string("::")), word, as(string("[]"), :array)]
-      |> sequence
-      |> tag(:type)
-    var = [skip(char(":")), (word|>map(&String.to_atom(&1))), option(type)]
-      |> sequence
-      |> tag(:var)
-    statement = [word_of(~r/[a-zA-Z0-9_(),=*; ]+/), var]
-      |> choice
-      |> many1
-    sql = sep_by1(statement, many1(newline))
-      |> map(&Enum.intersperse(&1, "\n"))
-      |> map(&List.flatten(&1))
-      |> map(&to_sql(&1))
-      |> tag(:sql)
-    parser = skip(many(newline))
-      |> sep_by1(sequence([fn_name, skip(many1(newline)), sql]), many(newline))
-      |> skip(many(newline))
-      |> eof
-    with [result] <- Combine.parse(input, parser) do
-      result
-    end
-  end
-
-  defmacro defqueries(path) do
-    with {:ok, content} <- File.read(path) do
-      sqls = parse(content)
-      Enum.map(sqls, fn [name: name, sql: {sql, vars}] ->
-        params = Enum.map(vars, fn {name, _}-> quote do: params[unquote(name)] end)
-        positional_params = Enum.map(vars, fn {name, _}-> Macro.var name, nil end)
-        arguments = case params do
-          [] -> [quote do: pid]
-          _ -> [(quote do: pid), (quote do: params)]
-        end
+  defp defquery(name, sql, vars) do
+    case vars do
+      [] ->
         quote do
           @doc """
           """
-          def unquote(name)(unquote_splicing(arguments)) do
-            Postgrex.query(pid, unquote(sql), [unquote_splicing(params)])
+          def unquote(name)() do
+            @adapter.query __MODULE__, unquote(sql), []
+          end
+        end
+      [{varname, _}] ->
+        varname = Macro.var varname, nil
+        quote do
+          @doc """
+          """
+          def unquote(name)(unquote varname) do
+            @adapter.query __MODULE__, unquote(sql), [unquote varname]
+          end
+        end
+      _ ->
+        args = Enum.map vars, fn {name, _}-> Macro.var name, nil end
+        kwargs = Enum.map vars, fn {name, _}-> quote do: params[unquote name] end
+        quote do
+          @doc """
+          """
+          def unquote(name)(params) when is_list params do
+            @adapter.query __MODULE__, unquote(sql), [unquote_splicing kwargs]
           end
 
           @doc """
           """
-          def unquote(name)(pid, unquote_splicing(positional_params)) do
-            Postgrex.query(pid, unquote(sql), [unquote_splicing(positional_params)])
+          def unquote(name)(unquote_splicing args) do
+            @adapter.query __MODULE__, unquote(sql), [unquote_splicing args]
           end
         end
-      end)
     end
   end
 
+  defp defqueries(input) do
+    Enum.map(Exql.Parser.parse(input), fn [name: name, sql: {sql, vars}] ->
+      defquery name, sql, vars end)
+  end
+
+  def loadqueries(path) do
+    with {:ok, content} <- File.read(path) do
+      defqueries content
+    end
+  end
+
+  defmacro defqueries(:path, path) do
+    loadqueries path
+  end
+
+  defmacro defqueries(app, path) do
+    loadqueries Path.join :code.priv_dir(app), path
+  end
+
+  defmacro __using__(opts) do
+    app = opts[:app]
+    sqls = Keyword.get opts, :sqls, ["queries.sql"]
+    defs = Enum.map sqls, fn path ->
+      loadqueries Path.join :code.priv_dir(app), path
+    end
+    quote do
+
+      config = Exql.Supervisor.get_config __MODULE__
+
+      @adapter config[:adapter]
+
+      def start_link() do
+        Exql.Supervisor.start_link(__MODULE__, (unquote app), @adapter)
+      end
+
+      unquote_splicing defs
+    end
+  end
 end

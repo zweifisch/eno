@@ -1,6 +1,6 @@
-defmodule ExqlTest do
+defmodule ExqlParserTest do
   use ExUnit.Case
-  doctest Exql
+  doctest Exql.Parser
 
   test "parse" do
 
@@ -23,7 +23,7 @@ select * from users
 
 where id = :id
 """
-    [create, exists, delete, get] = Exql.parse(input)
+    [create, exists, delete, get] = Exql.Parser.parse(input)
     assert create[:name] == :user_create!
     assert exists[:name] == :user_exists?
     assert delete[:name] == :user_delete!
