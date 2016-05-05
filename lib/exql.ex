@@ -69,6 +69,10 @@ defmodule Exql do
 
       @adapter config[:adapter]
 
+      def config do
+        Exql.Supervisor.get_config __MODULE__
+      end
+
       def start_link() do
         Exql.Supervisor.start_link(__MODULE__, (unquote app), @adapter)
       end

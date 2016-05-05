@@ -38,7 +38,7 @@ defmodule Exql.Parser do
     var = [skip(char(":")), (word|>map(&String.to_atom(&1))), option(type)]
       |> sequence
       |> tag(:var)
-    statement = [word_of(~r/[a-zA-Z0-9_(),=*; ]+/), var]
+    statement = [word_of(~r/[a-zA-Z0-9_(),=*;| ]+/), var]
       |> choice
       |> many1
     sql = sep_by1(statement, many1(newline))
