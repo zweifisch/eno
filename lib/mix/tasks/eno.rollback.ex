@@ -1,6 +1,6 @@
-defmodule Mix.Tasks.Exql.Rollback do
+defmodule Mix.Tasks.Eno.Rollback do
   use Mix.Task
-  import Mix.Exql
+  import Mix.Eno
   import Logger
 
   @shortdoc "Rollback the repository migrations"
@@ -8,8 +8,8 @@ defmodule Mix.Tasks.Exql.Rollback do
   @moduledoc """
   ## Examples
 
-      mix exql.rollback
-      mix exql.rollback -r App.Repo
+      mix eno.rollback
+      mix eno.rollback -r App.Repo
 
   """
 

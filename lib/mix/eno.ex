@@ -1,8 +1,8 @@
-defmodule Mix.Exql do
+defmodule Mix.Eno do
 
   def get_repos() do
     app = Mix.Project.config[:app]
-    Application.get_env(app, :exql_repos) || []
+    Application.get_env(app, :eno_repos) || []
   end
 
   def get_repo_dir(repo) do

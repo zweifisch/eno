@@ -1,4 +1,4 @@
-defmodule Exql.Adapters.Postgres do
+defmodule Eno.Adapters.Postgres do
 
   def query(repo, sql, params) do
     case Postgrex.query repo, sql, params do
@@ -47,7 +47,7 @@ defmodule Exql.Adapters.Postgres do
 
   def init_migration(repo) do
     run_query repo, """
-CREATE TABLE IF NOT EXISTS exql_migrations (
+CREATE TABLE IF NOT EXISTS eno_migrations (
  version bigint PRIMARY KEY,
  ran_at timestamp NOT NULL DEFAULT (now() at time zone 'utc'));
 """
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS exql_migrations (
   def migrations_ran(repo) do
     init_migration repo
     result = run_query repo, """
-SELECT version FROM exql_migrations ORDER BY version DESC;
+SELECT version FROM eno_migrations ORDER BY version DESC;
     """
     case result do
       {:ok, %{rows: rows}} -> Enum.map rows, &List.first(&1)
@@ -66,11 +66,11 @@ SELECT version FROM exql_migrations ORDER BY version DESC;
 
   def migrate(repo, version, sql) do
     run_script repo, sql
-    run_query repo, "INSERT INTO exql_migrations (version) values ($1);", [version]
+    run_query repo, "INSERT INTO eno_migrations (version) values ($1);", [version]
   end
 
   def rollback(repo, version, sql) do
     run_script repo, sql
-    run_query repo, "DELETE FROM exql_migrations WHERE version = $1;", [version]
+    run_query repo, "DELETE FROM eno_migrations WHERE version = $1;", [version]
   end
 end

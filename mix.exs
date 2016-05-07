@@ -1,13 +1,21 @@
-defmodule Exql.Mixfile do
+defmodule Eno.Mixfile do
   use Mix.Project
 
+  def package do
+    [maintainers: ["Feng Zhou"],
+     licenses: ["MIT"],
+     description: "lightweight SQL toolkit",
+     links: %{"GitHub" => "https://github.com/zweifisch/eno"}]
+  end
+
   def project do
-    [app: :exql,
+    [app: :eno,
      version: "0.0.1",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps,
+     package: package]
   end
 
   def application do

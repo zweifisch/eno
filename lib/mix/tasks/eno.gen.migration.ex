@@ -1,8 +1,8 @@
-defmodule Mix.Tasks.Exql.Gen.Migration do
+defmodule Mix.Tasks.Eno.Gen.Migration do
   use Mix.Task
 
   import Mix.Generator
-  import Mix.Exql
+  import Mix.Eno
 
   @shortdoc "Generate a new migration for the repo"
 
@@ -11,8 +11,8 @@ defmodule Mix.Tasks.Exql.Gen.Migration do
 
   ## Examples
 
-      mix exql.gen.migration add_posts_table
-      mix exql.gen.migration add_posts_table -r App.Repo
+      mix eno.gen.migration add_posts_table
+      mix eno.gen.migration add_posts_table -r App.Repo
 
   """
 

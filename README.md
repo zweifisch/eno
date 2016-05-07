@@ -1,23 +1,19 @@
-# Exql
+# Eno
 
 [![Build Status][travis-image]][travis-url]
 
-[yesql](https://github.com/krisajenkins/yesql) and [ragtime](https://github.com/weavejester/ragtime) for Elixir
+Lightweight SQL toolkit for elixir inspired by [yesql](https://github.com/krisajenkins/yesql) and [ragtime](https://github.com/weavejester/ragtime).
+
+For the moment only PostgreSQL is supported, and you need to add [postgrex](http://github.com/ericmj/postgrex) as a dependency.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+It's [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
 
-  1. Add exql to your list of dependencies in `mix.exs`:
+  1. Add eno to your list of dependencies in `mix.exs`:
 
         def deps do
-          [{:exql, "~> 0.0.1"}]
-        end
-
-  2. Ensure exql is started before your application:
-
-        def application do
-          [applications: [:exql]]
+          [{:eno, "~> 0.0.1"}]
         end
 
 ## Usage
@@ -25,7 +21,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 lib/yourapp/repo.ex
 
     defmodule YourApp.Repo do
-      use Exql
+      use Eno
     end
 
 lib/yourapp/repo.sql
@@ -44,8 +40,8 @@ lib/yourapp.ex
 
 config/config.ex
 
-    config :exql, YourApp.Repo,
-      adapter: Exql.Adapters.Postgres,
+    config :eno, YourApp.Repo,
+      adapter: Eno.Adapters.Postgres,
       hostname: "localhost",
       username: "user",
       password: "pass",
@@ -59,7 +55,7 @@ finally
 
 ## Migration
 
-    $ mix exql.gen.migration init_users
+    $ mix eno.gen.migration init_users
 
 priv/migrations/repo/20160507022535_init_users.up.sql
 
@@ -72,16 +68,20 @@ priv/migrations/repo/20160507022535_init_users.down.sql
 config/config.ex
 
     config :yourapp,
-      exql_repos: [YourApp.Repo]
+      eno_repos: [YourApp.Repo]
 
 up
 
-    $ mix exql.migrate [-r YourApp.Repo]
+    $ mix eno.migrate [-r YourApp.Repo]
 
 down
 
-    $ mix exql.rollback [-r YourApp.Repo]
+    $ mix eno.rollback [-r YourApp.Repo]
+
+## Status
+
+Not ready for production use yet. The API is subject to change.
 
 
-[travis-image]: https://img.shields.io/travis/zweifisch/exql.svg?style=flat
-[travis-url]: https://travis-ci.org/zweifisch/exql
+[travis-image]: https://img.shields.io/travis/zweifisch/eno.svg?style=flat
+[travis-url]: https://travis-ci.org/zweifisch/eno

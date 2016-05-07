@@ -1,4 +1,4 @@
-defmodule Exql do
+defmodule Eno do
 
   defp defquery(name, sql, vars) do
     case vars do
@@ -39,7 +39,7 @@ defmodule Exql do
   end
 
   defp defqueries(input) do
-    Enum.map(Exql.Parser.parse(input), fn [name: name, sql: {sql, vars}] ->
+    Enum.map(Eno.Parser.parse(input), fn [name: name, sql: {sql, vars}] ->
       defquery name, sql, vars end)
   end
 
@@ -66,7 +66,7 @@ defmodule Exql do
            end |> Enum.map(&Path.join(Path.dirname(__CALLER__.file), &1))
 
     quote do
-      config = Exql.Supervisor.get_config __MODULE__
+      config = Eno.Supervisor.get_config __MODULE__
 
       unquote_splicing Enum.map sqls, fn x ->
         quote do: @external_resource unquote(x)
@@ -75,11 +75,11 @@ defmodule Exql do
       @adapter config[:adapter]
 
       def config do
-        Exql.Supervisor.get_config __MODULE__
+        Eno.Supervisor.get_config __MODULE__
       end
 
       def start_link() do
-        Exql.Supervisor.start_link(__MODULE__, Application.get_application(__MODULE__), @adapter)
+        Eno.Supervisor.start_link(__MODULE__, Application.get_application(__MODULE__), @adapter)
       end
 
       unquote_splicing Enum.map(sqls, &loadqueries(&1))

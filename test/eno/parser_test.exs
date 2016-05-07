@@ -1,6 +1,6 @@
-defmodule ExqlParserTest do
+defmodule EnoParserTest do
   use ExUnit.Case
-  doctest Exql.Parser
+  doctest Eno.Parser
 
   test "parse" do
 
@@ -23,7 +23,7 @@ select * from users
 
 where id = :id
 """
-    [create, exists, delete, get] = Exql.Parser.parse(input)
+    [create, exists, delete, get] = Eno.Parser.parse(input)
     assert create[:name] == :user_create!
     assert exists[:name] == :user_exists?
     assert delete[:name] == :user_delete!

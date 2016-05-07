@@ -1,8 +1,8 @@
-defmodule Exql.Supervisor do
+defmodule Eno.Supervisor do
   use Supervisor
 
   def get_config(repo) do
-    config = Application.get_env :exql, repo
+    config = Application.get_env :eno, repo
     config
   end
 

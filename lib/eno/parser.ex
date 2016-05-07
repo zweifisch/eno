@@ -1,4 +1,4 @@
-defmodule Exql.Parser do
+defmodule Eno.Parser do
 
   use Combine, parsers: [:text]
 

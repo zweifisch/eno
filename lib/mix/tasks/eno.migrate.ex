@@ -1,6 +1,6 @@
-defmodule Mix.Tasks.Exql.Migrate do
+defmodule Mix.Tasks.Eno.Migrate do
   use Mix.Task
-  import Mix.Exql
+  import Mix.Eno
   import Logger
 
   @shortdoc "Runs the repository migrations"
@@ -8,8 +8,8 @@ defmodule Mix.Tasks.Exql.Migrate do
   @moduledoc """
   ## Examples
 
-      mix exql.migrate
-      mix exql.migrate -r App.Repo
+      mix eno.migrate
+      mix eno.migrate -r App.Repo
 
   """
 
