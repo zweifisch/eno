@@ -59,13 +59,18 @@ defmodule Exql do
 
   defmacro __using__(opts) do
     app = opts[:app]
-    sqls = Keyword.get opts, :sqls, ["queries.sql"]
-    defs = Enum.map sqls, fn path ->
-      loadqueries Path.join :code.priv_dir(app), path
-    end
-    quote do
+    config = Application.get_env :exql, __CALLER__.module
 
+    sqls = [Path.join("queries", "#{__CALLER__.module |> Module.split |> List.last |> Macro.underscore}.sql")]
+
+    sqls = Enum.map sqls, &Path.join(:code.priv_dir(app), &1)
+
+    quote do
       config = Exql.Supervisor.get_config __MODULE__
+
+      unquote_splicing Enum.map sqls, fn x ->
+        quote do: @external_resource unquote(x)
+      end
 
       @adapter config[:adapter]
 
@@ -77,7 +82,7 @@ defmodule Exql do
         Exql.Supervisor.start_link(__MODULE__, (unquote app), @adapter)
       end
 
-      unquote_splicing defs
+      unquote_splicing Enum.map(sqls, &loadqueries(&1))
     end
   end
 end

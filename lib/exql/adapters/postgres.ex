@@ -1,7 +1,11 @@
 defmodule Exql.Adapters.Postgres do
 
   def query(repo, sql, params) do
-    Postgrex.query repo, sql, params
+    case Postgrex.query repo, sql, params do
+      {:ok, %{rows: rows, columns: columns}} ->
+        Enum.map rows, fn (row)-> Enum.zip(columns, row) |> Enum.into(%{}) end
+      result -> result
+    end
   end
 
   def child_spec(repo, opts) do
@@ -27,4 +31,13 @@ defmodule Exql.Adapters.Postgres do
     GenServer.stop pid
   end
 
+end
+
+defimpl Poison.Encoder, for: Postgrex.Timestamp do
+  def encode(%{day: day, hour: hour, min: min, month: month, sec: sec,
+               usec: _, year: year}, options) do
+    :io_lib.format("~.B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0BZ", [year, month, day, hour, min, sec])
+      |> :erlang.iolist_to_binary
+      |> Poison.Encoder.BitString.encode(options)
+  end
 end
