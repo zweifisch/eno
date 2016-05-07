@@ -15,6 +15,20 @@ defmodule Exql.Adapters.Postgres do
     Postgrex.child_spec opts
   end
 
+  defp run_query(repo, sql, params \\ []) do
+    {:ok, _} = Application.ensure_all_started(:postgrex)
+
+    {:ok, pid} = Postgrex.start_link repo.config
+    result = Postgrex.query pid, sql, params
+    case result do
+      {:error, error} ->
+        Mix.raise "#{error.postgres.message} #{sql}"
+      _ -> result
+    end
+    GenServer.stop pid
+    result
+  end
+
   def run_script(repo, script) do
     {:ok, _} = Application.ensure_all_started(:postgrex)
 
@@ -31,6 +45,34 @@ defmodule Exql.Adapters.Postgres do
     GenServer.stop pid
   end
 
+  def init_migration(repo) do
+    run_query repo, """
+CREATE TABLE IF NOT EXISTS exql_migrations (
+ version bigint PRIMARY KEY,
+ ran_at timestamp NOT NULL DEFAULT (now() at time zone 'utc'));
+"""
+  end
+
+  def migrations_ran(repo) do
+    init_migration repo
+    result = run_query repo, """
+SELECT version FROM exql_migrations ORDER BY version DESC;
+    """
+    case result do
+      {:ok, %{rows: rows}} -> Enum.map rows, &List.first(&1)
+      _ -> result
+    end
+  end
+
+  def migrate(repo, version, sql) do
+    run_script repo, sql
+    run_query repo, "INSERT INTO exql_migrations (version) values ($1);", [version]
+  end
+
+  def rollback(repo, version, sql) do
+    run_script repo, sql
+    run_query repo, "DELETE FROM exql_migrations WHERE version = $1;", [version]
+  end
 end
 
 defimpl Poison.Encoder, for: Postgrex.Timestamp do

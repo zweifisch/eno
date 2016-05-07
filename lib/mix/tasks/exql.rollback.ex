@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Exql.Rollback do
   use Mix.Task
   import Mix.Exql
+  import Logger
 
   @shortdoc "Rollback the repository migrations"
 
@@ -16,19 +17,19 @@ defmodule Mix.Tasks.Exql.Rollback do
   def run(args) do
     Mix.Task.run "loadpaths"
 
-    {opts, _, _} = OptionParser.parse args,
-      switches: [repo: :string],
-      aliases: [r: :repo]
-
-    repos = case opts[:repo] do
-      nil -> get_repos()
-      name -> [Module.concat String.split(name, ".")]
-    end
+    repos = parse_repos args
 
     Enum.each repos, fn repo ->
-      scripts = get_scripts ".down.sql", repo
-      Enum.each scripts, fn script ->
-        repo.config[:adapter].run_script repo, load_script(script, repo)
+      case get_migration_history repo do
+        [version|_] ->
+          scripts = get_scripts ".down.sql", repo
+          case Enum.find scripts, fn script -> version == parse_version script end do
+            nil -> Mix.raise "Can't find rollback script for version #{version}"
+            script ->
+              rollback repo, version, load_script(script, repo)
+              log :info, "Rolledback #{version}"
+          end
+        _ -> log :info, "All migrations rolledback"
       end
     end
   end

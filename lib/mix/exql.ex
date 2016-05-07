@@ -24,4 +24,32 @@ defmodule Mix.Exql do
     content
   end
 
+  def parse_repos(args) do
+    {opts, _, _} = OptionParser.parse args,
+      switches: [repo: :string],
+      aliases: [r: :repo]
+
+    case opts[:repo] do
+      nil -> get_repos()
+      name -> [Module.concat String.split(name, ".")]
+    end
+  end
+
+  def get_migration_history(repo) do
+    repo.config[:adapter].migrations_ran repo
+  end
+
+  def migrate(repo, version, sql) do
+    repo.config[:adapter].migrate repo, version, sql
+  end
+
+  def rollback(repo, version, sql) do
+    repo.config[:adapter].rollback repo, version, sql
+  end
+
+  def parse_version(filename) do
+    {version, _} = String.split_at filename, 14
+    String.to_integer version
+  end
+
 end

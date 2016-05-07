@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Exql.Migrate do
   use Mix.Task
   import Mix.Exql
+  import Logger
 
   @shortdoc "Runs the repository migrations"
 
@@ -16,19 +17,18 @@ defmodule Mix.Tasks.Exql.Migrate do
   def run(args) do
     Mix.Task.run "loadpaths"
 
-    {opts, _, _} = OptionParser.parse args,
-      switches: [repo: :string],
-      aliases: [r: :repo]
-
-    repos = case opts[:repo] do
-      nil -> get_repos()
-      name -> [Module.concat String.split(name, ".")]
-    end
+    repos = parse_repos args
 
     Enum.each repos, fn repo ->
-      scripts = get_scripts ".up.sql", repo
+      scripts = get_scripts(".up.sql", repo) |> Enum.sort
+      migrations_ran = MapSet.new get_migration_history repo
+
       Enum.each scripts, fn script ->
-        repo.config[:adapter].run_script repo, load_script(script, repo)
+        version = parse_version script
+        unless MapSet.member? migrations_ran, version do
+          migrate repo, version, load_script(script, repo)
+          log :info, "Migrated #{version}"
+        end
       end
     end
   end
