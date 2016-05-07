@@ -25,8 +25,16 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 lib/yourapp/repo.ex
 
     defmodule YourApp.Repo do
-      use Exql, app: :yourapp
+      use Exql
     end
+
+lib/yourapp/repo.sql
+
+    -- name: user_list
+    select * from users offset :offset limit :limit;
+
+    -- name: user_get
+    select * from users where user_id = :id;
 
 lib/yourapp.ex
 
@@ -43,33 +51,27 @@ config/config.ex
       password: "pass",
       database: "db"
 
-priv/queries/repo.sql
-
-    -- name: user_list
-    select * from users offset :offset limit :limit;
-
-    -- name: user_get
-    select * from users where user_id = :id;
-
 finally
 
     iex> YourApp.Repo.user_list offset: 0, limit: 10
 
     iex> YourApp.Repo.user_get 1
 
-## Migration(TBD)
+## Migration
 
-priv/migrations/001-create-user-table.up.sql
+    $ mix exql.gen.migration init_users
 
-    create table users;
+priv/migrations/repo/20160507022535_init_users.up.sql
 
-priv/migrations/001-create-user-table.down.sql
+    create table users (id SERIAL PRIMARY KEY, name varchar(255) NOT NULL UNIQUE);
+
+priv/migrations/repo/20160507022535_init_users.down.sql
 
     drop table users;
 
 config/config.ex
 
-    config :soa,
+    config :yourapp,
       exql_repos: [YourApp.Repo]
 
 up
@@ -78,7 +80,7 @@ up
 
 down
 
-    $ mix exql.rollback
+    $ mix exql.rollback [-r YourApp.Repo]
 
 
 [travis-image]: https://img.shields.io/travis/zweifisch/exql.svg?style=flat

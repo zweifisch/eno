@@ -74,12 +74,3 @@ SELECT version FROM exql_migrations ORDER BY version DESC;
     run_query repo, "DELETE FROM exql_migrations WHERE version = $1;", [version]
   end
 end
-
-defimpl Poison.Encoder, for: Postgrex.Timestamp do
-  def encode(%{day: day, hour: hour, min: min, month: month, sec: sec,
-               usec: _, year: year}, options) do
-    :io_lib.format("~.B-~2..0B-~2..0BT~2..0B:~2..0B:~2..0BZ", [year, month, day, hour, min, sec])
-      |> :erlang.iolist_to_binary
-      |> Poison.Encoder.BitString.encode(options)
-  end
-end

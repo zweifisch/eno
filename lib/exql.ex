@@ -44,8 +44,9 @@ defmodule Exql do
   end
 
   def loadqueries(path) do
-    with {:ok, content} <- File.read(path) do
-      defqueries content
+    case File.read path do
+      {:error, :enoent} -> raise "Cant load sql at #{path}"
+      {:ok, content} -> defqueries content
     end
   end
 
@@ -58,12 +59,11 @@ defmodule Exql do
   end
 
   defmacro __using__(opts) do
-    app = opts[:app]
-    config = Application.get_env :exql, __CALLER__.module
-
-    sqls = [Path.join("queries", "#{__CALLER__.module |> Module.split |> List.last |> Macro.underscore}.sql")]
-
-    sqls = Enum.map sqls, &Path.join(:code.priv_dir(app), &1)
+    sqls = case opts[:sql] do
+             pathes when is_list pathes -> pathes
+             path when is_binary path -> [path]
+             nil -> ["#{__CALLER__.module |> Module.split |> List.last |> Macro.underscore}.sql"]
+           end |> Enum.map(&Path.join(Path.dirname(__CALLER__.file), &1))
 
     quote do
       config = Exql.Supervisor.get_config __MODULE__
@@ -79,7 +79,7 @@ defmodule Exql do
       end
 
       def start_link() do
-        Exql.Supervisor.start_link(__MODULE__, (unquote app), @adapter)
+        Exql.Supervisor.start_link(__MODULE__, Application.get_application(__MODULE__), @adapter)
       end
 
       unquote_splicing Enum.map(sqls, &loadqueries(&1))
